@@ -1,6 +1,7 @@
-
+#include "realTime.h"
 void setup() 
 {
+  Serial.begin(9600);
   
 }
 
