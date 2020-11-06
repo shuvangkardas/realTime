@@ -2,5 +2,6 @@
 #define _SYNC_TIME_H
 #include <Arduino.h>
 
+void realTimeBegin();
 bool  realTimeStart();
 #endif 
