@@ -2,18 +2,22 @@
 #include "RTClib.h"
 #include "AVR_Timer1.h"
 
+#define PRINT_TIMEOUT 60  //second
+#define UPDATE_CLOCK 3600 //second
+#define UPDATE_RTC_TIME 23  //11:00PM 
 /********Function prototype*************/
 void timerIsr(void);
 uint32_t getNtpTime();
 void setSecond(uint32_t second);
 uint32_t getRtcUnixTime();
 void updateRtc(uint32_t unixTime);
-
+bool dailyUpdateflag;
 
 /**********Objects global vars**************/
 RTC_DS1307 rtc;
 uint32_t sec;
-
+uint32_t prevSec;
+uint8_t prevHour;
 
 void realTimeBegin()
 {
@@ -29,7 +33,9 @@ void realTimeBegin()
     Serial.println(F("RTC Adjusted"));
   }
 
+  prevSec = 0;
   sec = 0;
+  dailyUpdateflag = false;
 }
 
 void timerIsr(void)
@@ -61,6 +67,7 @@ bool  realTimeStart()
   {
     setSecond(unixTime);            //update processor time
     timer1.start();                 //start processor time
+    
     rtc.adjust(DateTime(unixTime)); //update RTC time
   }
   else
@@ -76,6 +83,32 @@ bool  realTimeStart()
     }
   }
   return true;
+}
+
+void realTimeSync()
+{
+  if(sec - prevSec >= PRINT_TIMEOUT)
+  {
+    DateTime dt(sec);
+    char buf4[] = "DD/MM/YYYY-hh:mm:ss";
+    Serial.println(dt.toString(buf4));
+
+    uint8_t nowHour = dt.hour();
+    if(nowHour>prevHour)
+    {
+      prevHour = nowHour;
+      //execute hourly schedule job
+      if(nowHour == UPDATE_RTC_TI && dailyUpdateflag == false)
+      {
+        //execute daily schedule job
+        dailyUpdateflag == true;
+      }
+      else
+      {
+        dailyUpdateflag = false;
+      }
+    }
+  }
 }
 
 

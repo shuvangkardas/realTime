@@ -4,4 +4,5 @@
 
 void realTimeBegin();
 bool  realTimeStart();
+void realTimeSync();
 #endif 
