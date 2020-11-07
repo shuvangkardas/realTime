@@ -9,9 +9,6 @@
 void timerIsr(void);
 uint32_t getNtpTime();
 void setSecond(uint32_t second);
-uint32_t getRtcUnixTime();
-void updateRtc(uint32_t unixTime);
-void printDateTime(uint32_t unixTime);
 void printDateTime(DateTime *dtPtr);
 
 
@@ -21,8 +18,7 @@ uint32_t sec;
 uint32_t prevSec;
 uint8_t nowHour;
 uint8_t prevHour;
-time_state_t timeState;
-bool dailyUpdateflag;
+tState_t timeState;
 DateTime dt;
 
 void realTimeBegin()
@@ -38,9 +34,10 @@ void realTimeBegin()
     rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
     Serial.println(F("RTC Adjusted"));
   }
-  prevSec = 0;
   sec = 0;
-  dailyUpdateflag = false;
+  prevSec = 0;
+  nowHour = 0;
+  prevHour = 0;
   timeState = WAIT;
 }
 
@@ -50,27 +47,9 @@ void timerIsr(void)
   //  Serial.println(F("Timer ISR Triggered"));
 }
 
-uint32_t getRtcUnixTime()
-{
-  DateTime now = rtc.now();
-  return now.unixtime();
-}
-
 uint32_t getNtpTime()
 {
   return (1604737235 + 3 * 3600);
-}
-
-void updateRtc(uint32_t unixTime)
-{
-  rtc.adjust(DateTime(unixTime));
-}
-
-void printDateTime(uint32_t unixTime)
-{
-  DateTime dt(unixTime);
-  char buf4[] = "DD/MM/YYYY-hh:mm:ss";
-  Serial.println(dt.toString(buf4));
 }
 
 void printDateTime(DateTime *dtPtr)
@@ -105,7 +84,7 @@ bool  realTimeStart()
   return true;
 }
 
-time_state_t realTimeSync()
+tState_t realTimeSync()
 {
   switch (timeState)
   {

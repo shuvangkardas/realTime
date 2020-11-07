@@ -2,7 +2,7 @@
 #define _SYNC_TIME_H
 #include <Arduino.h>
 
-typedef enum time_state_t
+typedef enum tState_t
 {
   WAIT,
   MINUTELY,
@@ -11,5 +11,5 @@ typedef enum time_state_t
 };
 void realTimeBegin();
 bool  realTimeStart();
-time_state_t realTimeSync();
+tState_t realTimeSync();
 #endif 
