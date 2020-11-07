@@ -2,13 +2,14 @@
 #define _SYNC_TIME_H
 #include <Arduino.h>
 
-typedef enum time_event_t
+typedef enum time_state_t
 {
+  WAIT,
   MINUTELY,
   HOURLY,
   DAILY,
 };
 void realTimeBegin();
 bool  realTimeStart();
-time_event_t realTimeSync();
+time_state_t realTimeSync();
 #endif 
