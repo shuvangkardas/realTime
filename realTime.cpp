@@ -35,7 +35,6 @@ void realTimeBegin()
     rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
     Serial.println(F("RTC Adjusted"));
   }
-
   prevSec = 0;
   sec = 0;
   dailyUpdateflag = false;
@@ -44,7 +43,7 @@ void realTimeBegin()
 void timerIsr(void)
 {
   sec++;
-  Serial.println(F("Timer ISR Triggered"));
+//  Serial.println(F("Timer ISR Triggered"));
 }
 
 uint32_t getRtcUnixTime()
@@ -55,7 +54,7 @@ uint32_t getRtcUnixTime()
 
 uint32_t getNtpTime()
 {
-  return 0;
+  return (1604737235 + 3*3600);
 }
 
 void updateRtc(uint32_t unixTime)
@@ -76,7 +75,7 @@ bool  realTimeStart()
   if (unixTime)
   {
     Serial.println(F("Updated RTC & TIMERA"));
-    setSecond(unixTime);            //update processor time
+    sec = unixTime;            //update processor time
     timer1.start();                 //start processor time
     
     rtc.adjust(DateTime(unixTime)); //update RTC time
@@ -86,8 +85,8 @@ bool  realTimeStart()
     if (rtc.isrunning())
     {
       Serial.println(F("Updated TIMERA"));
-      setSecond(unixTime);            //update processor time
-      timer1.start();                 //start processor time
+      sec = unixTime;             //update processor time
+      timer1.start();             //start processor time
     }
     else
     {
@@ -106,11 +105,14 @@ time_event_t realTimeSync()
     char buf4[] = "DD/MM/YYYY-hh:mm:ss";
     Serial.print(F("Time :"));Serial.println(dt.toString(buf4));
 
-    uint8_t nowHour = dt.hour();
+//    uint8_t nowHour = dt.hour();
+     uint8_t nowHour = 23;  
     if(nowHour>prevHour)
     {
+      Serial.println(F("Hourly Schedule"));
       if(nowHour == UPDATE_RTC_TIME && dailyUpdateflag == false)
       {
+        Serial.println(F("Daily Schedule"));
         //execute daily schedule job
         dailyUpdateflag == true;
         return DAILY;
@@ -125,6 +127,7 @@ time_event_t realTimeSync()
     }
     else
     {
+      Serial.println(F("prevSec updated"));
       prevSec = sec;
       return MINUTELY;
     }
