@@ -109,7 +109,7 @@ time_event_t realTimeSync()
     uint8_t nowHour = dt.hour();
     if(nowHour>prevHour)
     {
-      if(nowHour == UPDATE_RTC_TI && dailyUpdateflag == false)
+      if(nowHour == UPDATE_RTC_TIME && dailyUpdateflag == false)
       {
         //execute daily schedule job
         dailyUpdateflag == true;
