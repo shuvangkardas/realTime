@@ -43,7 +43,7 @@ void realTimeBegin()
 void timerIsr(void)
 {
   sec++;
-//  Serial.println(F("Timer ISR Triggered"));
+  //  Serial.println(F("Timer ISR Triggered"));
 }
 
 uint32_t getRtcUnixTime()
@@ -54,7 +54,7 @@ uint32_t getRtcUnixTime()
 
 uint32_t getNtpTime()
 {
-  return (1604737235 + 3*3600);
+  return (1604737235 + 3 * 3600);
 }
 
 void updateRtc(uint32_t unixTime)
@@ -77,7 +77,7 @@ bool  realTimeStart()
     Serial.println(F("Updated RTC & TIMERA"));
     sec = unixTime;            //update processor time
     timer1.start();                 //start processor time
-    
+
     rtc.adjust(DateTime(unixTime)); //update RTC time
   }
   else
@@ -98,41 +98,106 @@ bool  realTimeStart()
 
 time_event_t realTimeSync()
 {
-  if(sec - prevSec >= PRINT_TIMEOUT)
+  switch (timeEvent)
   {
-    //printing date time 
-    DateTime dt(sec);
-    char buf4[] = "DD/MM/YYYY-hh:mm:ss";
-    Serial.print(F("Time :"));Serial.println(dt.toString(buf4));
+    case MINUTELY:
+      Serial.print(F("Time :")); Serial.println(dt.toString(buf4));
+      break;
+    case HOURLY:
 
-//    uint8_t nowHour = dt.hour();
-     uint8_t nowHour = 23;  
-    if(nowHour>prevHour)
-    {
-      Serial.println(F("Hourly Schedule"));
-      if(nowHour == UPDATE_RTC_TIME && dailyUpdateflag == false)
-      {
-        Serial.println(F("Daily Schedule"));
-        //execute daily schedule job
-        dailyUpdateflag == true;
-        return DAILY;
-      }
-      else
-      {
-        //execute hourly schedule job
-        prevHour = nowHour;
-        dailyUpdateflag = false;
-        return HOURLY;
-      }
-    }
-    else
-    {
-      Serial.println(F("prevSec updated"));
-      prevSec = sec;
-      return MINUTELY;
-    }
+      timeEvent = MINUTELY;
+      break;
+    case DAILY:
+      timeEvent = HOURLY;
+      break;
   }
+
 }
+//  if (sec - prevSec >= PRINT_TIMEOUT)
+//  {
+//    //printing date time
+//    DateTime dt(sec);
+//    char buf4[] = "DD/MM/YYYY-hh:mm:ss";
+//    Serial.print(F("Time :")); Serial.println(dt.toString(buf4));
+//
+//    //    uint8_t nowHour = dt.hour();
+//    uint8_t nowHour = 23;
+//    if (nowHour > prevHour)
+//    {
+//      if(dailyUpdateflag == false)
+//      {
+//        if (nowHour == UPDATE_RTC_TIME)
+//        {
+//          Serial.println(F("Daily Schedule"));
+//          dailyUpdateflag == true;
+//          return DAILY;
+//
+//        }
+//      }
+//      else
+//      {
+//        Serial.println(F("Hourly Schedule"));
+//        prevHour = nowHour;
+//        return HOURLY;
+//      }
+//
+//
+//
+//
+////      if (nowHour == UPDATE_RTC_TIME)
+////      {
+////        if (dailyUpdateflag == false)
+////        {
+////          Serial.println(F("Daily Schedule"));
+////          //execute daily schedule job
+////          dailyUpdateflag == true;
+////          return DAILY;
+////        }
+////        else
+////        {
+////          prevHour = nowHour;
+////          return HOURLY;
+////        }
+////      }
+////      else
+////      {
+////        //execute hourly schedule job
+////        prevHour = nowHour;
+////        dailyUpdateflag = false;
+////        return HOURLY;
+////      }
+//    }
+//    else
+//    {
+//      Serial.println(F("prevSec updated"));
+//      prevSec = sec;
+//      return MINUTELY;
+//    }
+//  }
+//}
+
+//time_event_t realTimeSync()
+//{
+//  if (sec - prevSec >= PRINT_TIMEOUT)
+//  {
+//    DateTime dt(sec);
+//    char buf4[] = "DD/MM/YYYY-hh:mm:ss";
+//    timeEvent = MINUTELY;
+//    uint8_t nowHour = 23;
+//    switch (timeEvent)
+//    {
+//      case MINUTELY:
+//        Serial.print(F("Time :")); Serial.println(dt.toString(buf4));
+//        break;
+//      case HOURLY:
+//        break;
+//      case DAILY:
+//        break;
+//    }
+//  }
+//}
+
+
 
 
 
