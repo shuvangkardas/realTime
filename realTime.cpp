@@ -171,5 +171,4 @@ tState_t realTimeSync()
       break;
   }
   return timeState;
-
 }
