@@ -2,6 +2,9 @@
 #define _SYNC_TIME_H
 #include <Arduino.h>
 
+typedef uint32_t (*funCb_t)(void);
+
+
 typedef enum tState_t
 {
   WAIT,
@@ -9,7 +12,7 @@ typedef enum tState_t
   HOURLY,
   DAILY,
 };
-void realTimeBegin();
+void realTimeBegin(funCb_t getntp = NULL);
 bool  realTimeStart();
 tState_t realTimeSync();
 #endif 

@@ -7,10 +7,11 @@
 #define UPDATE_RTC_TIME 23  //11:00PM 
 /********Function prototype*************/
 void timerIsr(void);
-uint32_t getNtpTime();
 void setSecond(uint32_t second);
 void printDateTime(DateTime *dtPtr);
-
+uint32_t getRtcUnix();
+void startSysTimeFromRtc();
+void updateTime(uint32_t NtpTime = 0);
 
 /**********Objects global vars**************/
 RTC_DS1307 rtc;
@@ -20,8 +21,9 @@ uint8_t nowHour;
 uint8_t prevHour;
 tState_t timeState;
 DateTime dt;
+funCb_t getNTP;
 
-void realTimeBegin()
+void realTimeBegin(funCb_t getntp)
 {
   timer1.initialize(1);
   timer1.attachIntCompB(timerIsr);
@@ -39,6 +41,7 @@ void realTimeBegin()
   nowHour = 0;
   prevHour = 0;
   timeState = WAIT;
+  getNTP = getntp;
 }
 
 void timerIsr(void)
@@ -47,9 +50,10 @@ void timerIsr(void)
   //  Serial.println(F("Timer ISR Triggered"));
 }
 
-uint32_t getNtpTime()
+uint32_t getRtcUnix()
 {
-  return (1604737235 + 3 * 3600);
+  DateTime now = rtc.now();
+  return now.unixtime();
 }
 
 void printDateTime(DateTime *dtPtr)
@@ -57,24 +61,61 @@ void printDateTime(DateTime *dtPtr)
   char buf4[] = "DD/MM/YYYY-hh:mm:ss";
   Serial.println(dtPtr->toString(buf4));
 }
-bool  realTimeStart()
+void startSysTimeFromRtc()
 {
-  uint32_t unixTime = getNtpTime();
-  if (unixTime)
-  {
-    Serial.println(F("Updated RTC & TIMERA"));
-    sec = unixTime;            //update processor time
-    timer1.start();                 //start processor time
+  uint32_t rtcUnix = getRtcUnix();
+  sec = rtcUnix;             //update processor time
+  timer1.start();             //start processor time
+}
 
-    rtc.adjust(DateTime(unixTime)); //update RTC time
+void updateTime(uint32_t NtpTime)
+{
+  if (NtpTime)
+  {
+    Serial.println(F("Updated from NTP"));
+    sec = NtpTime;
+    timer1.start();
+    rtc.adjust(DateTime(sec));
   }
   else
   {
-    if (rtc.isrunning())
+    Serial.println(F("Updated from RTC"));
+    uint32_t rtcUnix = getRtcUnix();
+    sec = rtcUnix;             //update processor time
+    timer1.start();             //start processor time
+  }
+}
+
+bool  realTimeStart()
+{
+  bool rtcRunning = rtc.isrunning();
+  if (getNTP != NULL)
+  {
+    uint32_t ntpUnix = getNTP();
+    if(ntpUnix)
     {
-      Serial.println(F("Updated TIMERA"));
-      sec = unixTime;             //update processor time
-      timer1.start();             //start processor time
+      updateTime(ntpUnix);
+      Serial.println(F("Updated RTC & TIMERA"));
+    }
+    else
+    {
+      if(rtcRunning)
+      {
+        updateTime();
+        Serial.println(F("NTP FAILED, TIMER UPDATED"));
+      }
+      else
+      {
+        return false;
+      }
+    }
+  }
+  else
+  {
+    if (rtcRunning)
+    {
+      updateTime();
+      Serial.println(F("NTP UNAVAILAVLE, TIMER UPDATED"));
     }
     else
     {
@@ -100,7 +141,7 @@ tState_t realTimeSync()
       dt = DateTime(sec);
       printDateTime(&dt);
       nowHour = dt.hour();
-//      nowHour = 23;
+      //      nowHour = 23;
       if (nowHour > prevHour)
       {
         prevHour = nowHour;
@@ -114,7 +155,7 @@ tState_t realTimeSync()
     case HOURLY:
       Serial.println(F("Hourly Schedule"));
       //execute hourly task
-      if(nowHour == UPDATE_RTC_TIME)
+      if (nowHour == UPDATE_RTC_TIME)
       {
         timeState = DAILY;
       }
@@ -132,7 +173,3 @@ tState_t realTimeSync()
   return timeState;
 
 }
-
-
-
-
