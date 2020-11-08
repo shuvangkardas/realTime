@@ -15,4 +15,5 @@ typedef enum tState_t
 void realTimeBegin(funCb_t getntp = NULL);
 bool  realTimeStart();
 tState_t realTimeSync();
+uint32_t second();
 #endif 

@@ -50,6 +50,11 @@ void timerIsr(void)
   //  Serial.println(F("Timer ISR Triggered"));
 }
 
+uint32_t second()
+{
+  return sec;
+}
+
 uint32_t getRtcUnix()
 {
   DateTime now = rtc.now();
