@@ -142,7 +142,7 @@ tState_t realTimeSync()
       }
       break;
     case MINUTELY:
-      Serial.println(F("Minutely Schedule"));
+      // Serial.println(F("Minutely Schedule"));
       dt = DateTime(sec);
       printDateTime(&dt);
       nowHour = dt.hour();
