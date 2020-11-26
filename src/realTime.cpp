@@ -2,7 +2,7 @@
 #include "RTClib.h"
 #include "AVR_Timer1.h"
 
-#define PRINT_TIMEOUT 5  //second
+#define PRINT_TIMEOUT 30  //second
 #define UPDATE_CLOCK 3600 //second
 #define UPDATE_RTC_TIME 23  //11:00PM 
 /********Function prototype*************/
@@ -64,7 +64,9 @@ uint32_t getRtcUnix()
 void printDateTime(DateTime *dtPtr)
 {
   char buf4[] = "DD/MM/YYYY-hh:mm:ss";
-  Serial.println(dtPtr->toString(buf4));
+  Serial.print(F("|------------------------------------|\r\n|         "));
+  Serial.print(dtPtr->toString(buf4));
+  Serial.println(F("        |\r\n|------------------------------------|"));
 }
 void startSysTimeFromRtc()
 {
