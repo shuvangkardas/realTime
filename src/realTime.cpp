@@ -23,6 +23,28 @@ tState_t timeState;
 DateTime dt;
 funCb_t getNTP;
 
+
+void rtBegin(funCb_t getntp)
+{
+	timer1.initialize(1);
+	timer1.attachIntCompB(timerIsr);
+	if (! rtc.begin())
+	{
+	    Serial.println(F("RTC Not Found"));
+	}
+	if (!rtc.isrunning())
+	{
+	    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+	    Serial.println(F("RTC Adjusted"));
+	}
+	sec = 0;
+	prevSec = 0;
+	nowHour = 0;
+	prevHour = 0;
+	timeState = WAIT;
+	getNTP = getntp;
+}
+
 void realTimeBegin(funCb_t getntp)
 {
   timer1.initialize(1);
@@ -93,6 +115,8 @@ void updateTime(uint32_t NtpTime)
   }
 }
 
+
+
 bool  realTimeStart()
 {
   bool rtcRunning = rtc.isrunning();
@@ -130,6 +154,46 @@ bool  realTimeStart()
     }
   }
   return true;
+}
+
+
+bool rtSync(uint32_t uTime)
+{
+	
+	if(uTime)
+	{
+	  updateTime(uTime);
+      Serial.println(F("Updated RTC & TIMERA"));
+	}
+	else
+	{
+		bool rtcRunning = rtc.isrunning();
+		if(rtcRunning)
+		{
+			updateTime();
+			Serial.println(F("NTP FAILED, TIMER UPDATED"));
+		}
+		else
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+
+bool rtsync()
+{
+	if(getNTP)
+	{
+		uint32_t ntpUnix = getNTP();
+		bool ok = rtSync(ntpUnix);
+		return ok;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 tState_t realTimeSync()
