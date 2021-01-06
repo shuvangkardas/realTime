@@ -74,10 +74,20 @@ void timerIsr(void)
   //  Serial.println(F("Timer ISR Triggered"));
 }
 
-uint32_t rtMs()
+uint32_t ms()
 {
-  // Serial.println(TCNT1);
-  return (uint32_t)(_tempSec*1000 + (TCNT1*1000)/ICR1);
+  // 1000*TCNT1/ICR1 + second*1000;
+  uint16_t tcnt1 = TCNT1;
+  // Serial.println(F("------"));
+  // Serial.println(tcnt1);
+  // Serial.println(ICR1);
+  uint32_t temp = (uint32_t)tcnt1*(uint32_t)1000;
+  // Serial.println(temp);
+  temp = temp/(uint32_t)ICR1;
+  // Serial.println(temp);
+
+  temp = _tempSec*(uint32_t)1000 + temp;
+  return temp;
 }
 
 uint32_t second()

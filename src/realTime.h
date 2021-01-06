@@ -23,7 +23,7 @@ void rtBegin(funCb_t getntp = NULL);
 
 bool rtSync(uint32_t uTime);
 bool rtsync();
-uint32_t rtMs();
+uint32_t ms();
 
 tState_t  rtLoop();
 
