@@ -15,7 +15,8 @@ void updateTime(uint32_t NtpTime = 0);
 
 /**********Objects global vars**************/
 RTC_DS1307 rtc;
-uint32_t sec;
+volatile uint32_t sec;
+volatile uint32_t _tempSec;
 uint32_t prevSec;
 uint8_t nowHour;
 uint8_t prevHour;
@@ -69,7 +70,14 @@ void realTimeBegin(funCb_t getntp)
 void timerIsr(void)
 {
   sec++;
+  _tempSec++;
   //  Serial.println(F("Timer ISR Triggered"));
+}
+
+uint32_t rtMs()
+{
+  // Serial.println(TCNT1);
+  return (uint32_t)(_tempSec*1000 + (TCNT1*1000)/ICR1);
 }
 
 uint32_t second()
