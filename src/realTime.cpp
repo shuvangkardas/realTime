@@ -4,7 +4,7 @@
 
 #define PRINT_TIMEOUT 30  //second
 #define UPDATE_CLOCK 3600 //second
-#define UPDATE_RTC_TIME 23  //11:00PM 
+#define DAILY_SCHEDULE_JOB_TIME 23  //11:00PM 
 /********Function prototype*************/
 void timerIsr(void);
 void setSecond(uint32_t second);
@@ -244,7 +244,7 @@ tState_t realTimeSync()
     case HOURLY:
       Serial.println(F("Hourly Schedule"));
       //execute hourly task
-      if (nowHour == UPDATE_RTC_TIME)
+      if (nowHour == DAILY_SCHEDULE_JOB_TIME)
       {
         timeState = DAILY;
       }
