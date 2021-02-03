@@ -18,9 +18,10 @@ tState_t realTimeSync();
 uint32_t second();
 
 
-
+uint32_t rtcUnix();
 void rtBegin(funCb_t getntp = NULL);
 bool rtSync(uint32_t uTime);
+bool rtSync2(uint32_t uTime);
 bool rtsync();
 uint32_t ms();
 
