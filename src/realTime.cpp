@@ -89,6 +89,7 @@ void printDateTime(DateTime *dtPtr)
 }
 void startSysTimeFromRtc()
 {
+  Serial.println(F("Processor time updated from RTC"));
   uint32_t rtcunix = rtcUnix();
   sec = rtcunix;  //update processor time
   timer1.start(); //start processor time
@@ -222,11 +223,12 @@ void rtBegin(funCb_t getntp)
   }
   else
   {
+    startSysTimeFromRtc();
     // uint32_t rtcunix = rtcUnix();
     // sec = rtcunix;  //update processor time
     // timer1.start(); //start processor time
     // Serial.println(F("Sys time start from rtc"));
-    updateTime();
+    // updateTime();
   }
 }
 
@@ -269,28 +271,27 @@ bool rtSync2(uint32_t uTime)
   timeDiff = abs(timeDiff);
   if (timeDiff <= ONE_HOUR_SEC)
   {
+    Serial.println(F("Time is close to rtc"));
+    sec = uTime;
+    timer1.start();
     if (timeDiff > 0)
     {
-      //if time shifts change time, else ignore.
-      Serial.println(F("Time is close to rtc"));
-      updateTime(uTime);
+      //if time shifts then change time, else ignore.
+      rtc.adjust(DateTime(sec));
+      Serial.println(F("RTC updated from NTP"));
     }
-
-    // Serial.println(F("Updated from NTP"));
-    // sec = uTime;
-    // timer1.start();
-    // rtc.adjust(DateTime(sec));
   }
   else
   {
     bool rtcRunning = rtc.isrunning();
     if (rtcRunning)
     {
+      startSysTimeFromRtc();
       // Serial.println(F("Processor time updated from RTC"));
       // uint32_t rtcunix = rtcUnix();
       // sec = rtcunix;  //update processor time
       // timer1.start(); //start processor time
-      updateTime();
+      // updateTime();
     }
     else
     {
