@@ -306,7 +306,8 @@ bool rtsync()
   if (getNTP)
   {
     uint32_t ntpUnix = getNTP();
-    bool ok = rtSync2(ntpUnix);
+    // bool ok = rtSync2(ntpUnix);
+     bool ok = rtSync(ntpUnix);
     return ok;
   }
   else
