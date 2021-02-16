@@ -26,7 +26,7 @@ typedef enum RT_SYNC_STATUS_t
 
 
 timeGetter_t _rtcGetSec = NULL;
-timeSetter_t _rtcSetSec = NULL;
+timeSetter_t _rtcUpdateSec = NULL;
 timeGetter_t _getNtpTime = NULL;
 
 void rtAttachRTC(timeFun_t setter, timeFun_t getter);
@@ -34,6 +34,9 @@ volatile uint32_t _second;
 volatile uint32_t _tempSec;
 tState_t _timeState;
 RT_SYNC_STATUS_t _rtSyncStatus;
+
+void updateSec(uint32_t sec);
+void printRtcSyncStatus(RT_SYNC_STATUS_t rtsync);
 /********Function prototype*************/
 void timerIsr(void);
 void setSecond(uint32_t second);
@@ -82,6 +85,12 @@ uint32_t ms()
 uint32_t second()
 {
   return _second;
+}
+
+void updateSec(uint32_t sec)
+{
+  //check if input sec is different from existing sec. 
+  _second = sec;
 }
 
 void printDateTime(DateTime *dtPtr)
@@ -150,6 +159,25 @@ tState_t realTimeSync()
 }
 
 /****************New Library******************/
+
+void printRtcSyncStatus(RT_SYNC_STATUS_t rtsync)
+{
+  Serial.print(F("<--Timer sync Status : "))
+  switch (rtsync)
+  {
+  case NTP_SYNCED:
+    Serial.print(F("NTP_SYNCED"));
+    break;
+  case RTC_SYNCED:
+    Serial.print(F("RTC_SYNCED"));
+    break;
+  case UNSYNCED:
+     Serial.print(F("UNSYNCED"));
+  break;
+  }
+  Serial.println(F("--->"));
+}
+
 void updateTime(uint32_t NtpTime)
 {
   if (NtpTime)
@@ -171,7 +199,7 @@ void updateTime(uint32_t NtpTime)
 void rtAttachRTC(timeGetter_t setter, timeSetter_t getter)
 {
   _rtcGetSec = NULL;
-  _rtcSetSec = NULL;
+  _rtcUpdateSec = NULL;
 }
 
 void rtBegin(funCb_t getntp)
@@ -188,19 +216,16 @@ void rtBegin(funCb_t getntp)
 	timer1.attachIntCompB(timerIsr);
 }
 
- NTP_SYNCED,
-  RTC_SYNCED,
-  UNSYNCED,
-bool rtSync(uint32_t uTime)
+
+RT_SYNC_STATUS_t rtSync(uint32_t uTime)
 {
 	// I have to assume that utime is valid time. 
   if(uTime)
   {
-    _second = uTime;
-     timer1.start();
-     if(_rtcSetSec != NULL)
+     updateSec(uTime);
+     if(_rtcUpdateSec != NULL)
      {
-       _rtcSetSec(_second);
+       _rtcUpdateSec(uTime); //this function update rtc time if differs more than 1 sec
      }
      _rtSyncStatus = NTP_SYNCED;
   }
@@ -213,25 +238,26 @@ bool rtSync(uint32_t uTime)
       if(rtcSec)
       {
         //if rtc provides a valid time
-        _second = rtcSec;
-        timer1.start();
+        updateSec(rtcSec);
         _rtSyncStatus = RTC_SYNCED;
       }
       else
       {
         //zero means rtc provides an invalid time
-        _second = 0
-        timer1.start();
+        updateSec(0); //start rttimer from zero
         _rtSyncStatus = UNSYNCED;
       }
     }
     else
     {
       // if device has no rtc chip
-      _second = 0;
-      
+      updateSec(0);
+      _rtSyncStatus = UNSYNCED;
     }
   }
+  timer1.start();//start rt timer
+  printRtcSyncStatus(_rtSyncStatus);
+  return _rtSyncStatus;
 }
 
 
