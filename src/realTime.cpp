@@ -5,54 +5,62 @@
 #define PRINT_TIMEOUT 30  //second
 #define UPDATE_CLOCK 3600 //second
 #define DAILY_SCHEDULE_JOB_TIME 23  //11:00PM 
+
+typedef uint32_t (*timeGetter_t)(void);
+typedef void (*timeSetter_t)(uint32_t);
+typedef enum tState_t
+{
+  WAIT,
+  MINUTELY,
+  HOURLY,
+  DAILY,
+};
+typedef enum RT_SYNC_STATUS_t
+{
+  NTP_SYNCED,
+  RTC_SYNCED,
+  UNSYNCED,
+};
+
+/************v0.3.0 new api************/
+
+
+timeGetter_t _rtcGetSec = NULL;
+timeSetter_t _rtcSetSec = NULL;
+timeGetter_t _getNtpTime = NULL;
+
+void rtAttachRTC(timeFun_t setter, timeFun_t getter);
+volatile uint32_t _second;
+volatile uint32_t _tempSec;
+tState_t _timeState;
+RT_SYNC_STATUS_t _rtSyncStatus;
 /********Function prototype*************/
 void timerIsr(void);
 void setSecond(uint32_t second);
 void printDateTime(DateTime *dtPtr);
-uint32_t getRtcUnix();
 void startSysTimeFromRtc();
 void updateTime(uint32_t NtpTime = 0);
 
 /**********Objects global vars**************/
 RTC_DS1307 rtc;
 volatile uint32_t sec;
-volatile uint32_t _tempSec;
+
 uint32_t prevSec;
 uint8_t nowHour;
 uint8_t prevHour;
-tState_t timeState;
+
 DateTime dt;
 funCb_t getNTP;
 
 
 
 
-void realTimeBegin(funCb_t getntp)
-{
-  timer1.initialize(1);
-  timer1.attachIntCompB(timerIsr);
-  if (! rtc.begin())
-  {
-    Serial.println(F("RTC Not Found"));
-  }
-  if (!rtc.isrunning())
-  {
-    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-    Serial.println(F("RTC Adjusted"));
-  }
-  sec = 0;
-  prevSec = 0;
-  nowHour = 0;
-  prevHour = 0;
-  timeState = WAIT;
-  getNTP = getntp;
-}
 
 void timerIsr(void)
 {
-  sec++;
+  _second++;
   _tempSec++;
-  //  Serial.println(F("Timer ISR Triggered"));
+  Serial.println(F("Timer ISR Triggered"));
 }
 
 uint32_t ms()
@@ -73,13 +81,7 @@ uint32_t ms()
 
 uint32_t second()
 {
-  return sec;
-}
-
-uint32_t getRtcUnix()
-{
-  DateTime now = rtc.now();
-  return now.unixtime();
+  return _second;
 }
 
 void printDateTime(DateTime *dtPtr)
@@ -95,70 +97,6 @@ void startSysTimeFromRtc()
   sec = rtcUnix;             //update processor time
   timer1.start();             //start processor time
 }
-
-void updateTime(uint32_t NtpTime)
-{
-  if (NtpTime)
-  {
-    Serial.println(F("Updated from NTP"));
-    sec = NtpTime;
-    timer1.start();
-    rtc.adjust(DateTime(sec));
-  }
-  else
-  {
-    Serial.println(F("Updated from RTC"));
-    uint32_t rtcUnix = getRtcUnix();
-    sec = rtcUnix;             //update processor time
-    timer1.start();             //start processor time
-  }
-}
-
-
-
-bool  realTimeStart()
-{
-  bool rtcRunning = rtc.isrunning();
-  if (getNTP != NULL)
-  {
-    uint32_t ntpUnix = getNTP();
-    if(ntpUnix)
-    {
-      updateTime(ntpUnix);
-      Serial.println(F("Updated RTC & TIMERA"));
-    }
-    else
-    {
-      if(rtcRunning)
-      {
-        updateTime();
-        Serial.println(F("NTP FAILED, TIMER UPDATED"));
-      }
-      else
-      {
-        return false;
-      }
-    }
-  }
-  else
-  {
-    if (rtcRunning)
-    {
-      updateTime();
-      Serial.println(F("NTP UNAVAILAVLE, TIMER UPDATED"));
-    }
-    else
-    {
-      return false;
-    }
-  }
-  return true;
-}
-
-
-
-
-
 
 
 
@@ -212,49 +150,88 @@ tState_t realTimeSync()
 }
 
 /****************New Library******************/
-void rtBegin(funCb_t getntp)
+void updateTime(uint32_t NtpTime)
 {
-	timer1.initialize(1);
-	timer1.attachIntCompB(timerIsr);
-	if (! rtc.begin())
-	{
-	    Serial.println(F("RTC Not Found"));
-	}
-	if (!rtc.isrunning())
-	{
-	    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-	    Serial.println(F("RTC Adjusted"));
-	}
-	sec = 0;
-	prevSec = 0;
-	nowHour = 0;
-	prevHour = 0;
-	timeState = WAIT;
-	getNTP = getntp;
+  if (NtpTime)
+  {
+    Serial.println(F("Updated from NTP"));
+    sec = NtpTime;
+    timer1.start();
+    rtc.adjust(DateTime(sec));
+  }
+  else
+  {
+    Serial.println(F("Updated from RTC"));
+    uint32_t rtcUnix = getRtcUnix();
+    sec = rtcUnix;             //update processor time
+    timer1.start();             //start processor time
+  }
 }
 
+void rtAttachRTC(timeGetter_t setter, timeSetter_t getter)
+{
+  _rtcGetSec = NULL;
+  _rtcSetSec = NULL;
+}
+
+void rtBegin(funCb_t getntp)
+{
+  _getNtpTime = getntp;
+  _second = 0;
+  _tempSec = 0;
+  _timeState = WAIT;
+  _rtSyncStatus = UNSYNCED;
+	// prevSec = 0;
+	// nowHour = 0;
+	// prevHour = 0;
+  timer1.initialize(1);
+	timer1.attachIntCompB(timerIsr);
+}
+
+ NTP_SYNCED,
+  RTC_SYNCED,
+  UNSYNCED,
 bool rtSync(uint32_t uTime)
 {
-	
-	if(uTime)
-	{
-	  updateTime(uTime);
-      Serial.println(F("Updated RTC & TIMERA"));
-	}
-	else
-	{
-		bool rtcRunning = rtc.isrunning();
-		if(rtcRunning)
-		{
-			updateTime();
-			Serial.println(F("NTP FAILED, TIMER UPDATED"));
-		}
-		else
-		{
-			return false;
-		}
-	}
-	return true;
+	// I have to assume that utime is valid time. 
+  if(uTime)
+  {
+    _second = uTime;
+     timer1.start();
+     if(_rtcSetSec != NULL)
+     {
+       _rtcSetSec(_second);
+     }
+     _rtSyncStatus = NTP_SYNCED;
+  }
+  else
+  {
+    //when utime is zero, means no time found from rtc
+    if(_rtcGetSec != NULL)
+    {
+      uint32_t rtcSec = _rtcGetSec();
+      if(rtcSec)
+      {
+        //if rtc provides a valid time
+        _second = rtcSec;
+        timer1.start();
+        _rtSyncStatus = RTC_SYNCED;
+      }
+      else
+      {
+        //zero means rtc provides an invalid time
+        _second = 0
+        timer1.start();
+        _rtSyncStatus = UNSYNCED;
+      }
+    }
+    else
+    {
+      // if device has no rtc chip
+      _second = 0;
+      
+    }
+  }
 }
 
 
