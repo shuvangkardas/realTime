@@ -18,18 +18,13 @@ typedef enum RT_SYNC_STATUS_t
   UNSYNCED,
 };
 
-// void realTimeBegin(funCb_t getntp = NULL);
-// bool  realTimeStart();
-// tState_t realTimeSync();
-uint32_t second();
-
 
 void rtAttachRTC( timeSetter_t getter, timeGetter_t setter);
 void rtBegin(timeGetter_t getntp = NULL);
 RT_SYNC_STATUS_t rtSync(uint32_t uTime);
 RT_SYNC_STATUS_t rtsync();
+uint32_t second();
 uint32_t ms();
-
 tState_t rtLoop();
 
 
