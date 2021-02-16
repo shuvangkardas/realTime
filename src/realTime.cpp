@@ -6,44 +6,28 @@
 #define UPDATE_CLOCK 3600 //second
 #define DAILY_SCHEDULE_JOB_TIME 23  //11:00PM 
 
-/************v0.3.0 new api************/
+/********Function prototype*************/
+void timerIsr(void);
+void updateSec(uint32_t sec);
+void printDateTime(DateTime *dtPtr);
+
+void rtAttachRTC(timeSetter_t setter, timeGetter_t getter);
+void printRtcSyncStatus(RT_SYNC_STATUS_t rtsync);
+
+/***********Global Vars****************/
 timeGetter_t _rtcGetSec = NULL;
 timeSetter_t _rtcUpdateSec = NULL;
 timeGetter_t _getNtpTime = NULL;
 
-void rtAttachRTC(timeSetter_t setter, timeGetter_t getter);
 volatile uint32_t _second;
-uint32_t _prevSecond;
 volatile uint32_t _tempSec;
-tState_t _timeState;
-RT_SYNC_STATUS_t _rtSyncStatus;
-
-void updateSec(uint32_t sec);
-void printRtcSyncStatus(RT_SYNC_STATUS_t rtsync);
-
-DateTime _dt;
+uint32_t _prevSecond;
 uint8_t _nowHour;
 uint8_t _prevHour;
-/********Function prototype*************/
-void timerIsr(void);
-// void setSecond(uint32_t second);
-void printDateTime(DateTime *dtPtr);
-void startSysTimeFromRtc();
-void updateTime(uint32_t NtpTime = 0);
-DateTime dt;
-/**********Objects global vars**************/
-// RTC_DS1307 rtc;
-// volatile uint32_t sec;
 
-// uint32_t prevSec;
-// uint8_t nowHour;
-// uint8_t prevHour;
-
-
-// funCb_t getNTP;
-
-
-
+tState_t _timeState;
+RT_SYNC_STATUS_t _rtSyncStatus;
+DateTime _dt;
 
 
 void timerIsr(void)
@@ -89,46 +73,6 @@ void printDateTime(DateTime *dtPtr)
 }
 
 
-
-
-/****************New Library******************/
-
-void printRtcSyncStatus(RT_SYNC_STATUS_t rtsync)
-{
-  Serial.print(F("<--Timer sync Status : "));
-  switch (rtsync)
-  {
-  case NTP_SYNCED:
-    Serial.print(F("NTP_SYNCED"));
-    break;
-  case RTC_SYNCED:
-    Serial.print(F("RTC_SYNCED"));
-    break;
-  case UNSYNCED:
-     Serial.print(F("UNSYNCED"));
-  break;
-  }
-  Serial.println(F("--->"));
-}
-
-// void updateTime(uint32_t NtpTime)
-// {
-//   if (NtpTime)
-//   {
-//     Serial.println(F("Updated from NTP"));
-//     sec = NtpTime;
-//     timer1.start();
-//     rtc.adjust(DateTime(sec));
-//   }
-//   else
-//   {
-//     Serial.println(F("Updated from RTC"));
-//     uint32_t rtcUnix = getRtcUnix();
-//     sec = rtcUnix;             //update processor time
-//     timer1.start();             //start processor time
-//   }
-// }
-
 void rtAttachRTC( timeSetter_t getter, timeGetter_t setter)
 {
   _rtcGetSec = getter;
@@ -152,6 +96,24 @@ void rtBegin(timeGetter_t getntp = NULL)
 	timer1.attachIntCompB(timerIsr);
 }
 
+
+void printRtcSyncStatus(RT_SYNC_STATUS_t rtsync)
+{
+  Serial.print(F("<--Timer sync Status : "));
+  switch (rtsync)
+  {
+  case NTP_SYNCED:
+    Serial.print(F("NTP_SYNCED"));
+    break;
+  case RTC_SYNCED:
+    Serial.print(F("RTC_SYNCED"));
+    break;
+  case UNSYNCED:
+     Serial.print(F("UNSYNCED"));
+  break;
+  }
+  Serial.println(F("--->"));
+}
 
 RT_SYNC_STATUS_t rtSync(uint32_t uTime)
 {
