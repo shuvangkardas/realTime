@@ -197,18 +197,15 @@ RT_SYNC_STATUS_t rtSync(uint32_t uTime)
 }
 
 
-bool rtsync()
+RT_SYNC_STATUS_t rtsync()
 {
-	if(getNTP)
+  RT_SYNC_STATUS_t syncStatus = UNSYNCED;
+	if(_getNtpTime)
 	{
 		uint32_t ntpUnix = _getNtpTime();
-		bool ok = rtSync(ntpUnix);
-		return ok;
+		syncStatus = rtSync(ntpUnix);
 	}
-	else
-	{
-		return false;
-	}
+  return syncStatus;
 }
 
 tState_t rtLoop()
@@ -225,8 +222,8 @@ tState_t rtLoop()
     case MINUTELY:
       // Serial.println(F("Minutely Schedule"));
       _dt = DateTime(_second);
-      printDateTime(&dt);
-      _nowHour = dt.hour();
+      printDateTime(&_dt);
+      _nowHour = _dt.hour();
       //      nowHour = 23;
       if (_nowHour > _prevHour)
       {
