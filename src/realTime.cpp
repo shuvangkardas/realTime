@@ -6,40 +6,27 @@
 #define UPDATE_CLOCK 3600 //second
 #define DAILY_SCHEDULE_JOB_TIME 23  //11:00PM 
 
-typedef uint32_t (*timeGetter_t)(void);
-typedef void (*timeSetter_t)(uint32_t);
-typedef enum tState_t
-{
-  WAIT,
-  MINUTELY,
-  HOURLY,
-  DAILY,
-};
-typedef enum RT_SYNC_STATUS_t
-{
-  NTP_SYNCED,
-  RTC_SYNCED,
-  UNSYNCED,
-};
-
 /************v0.3.0 new api************/
-
-
 timeGetter_t _rtcGetSec = NULL;
 timeSetter_t _rtcUpdateSec = NULL;
 timeGetter_t _getNtpTime = NULL;
 
 void rtAttachRTC(timeFun_t setter, timeFun_t getter);
 volatile uint32_t _second;
+uint32_t _prevSecond;
 volatile uint32_t _tempSec;
 tState_t _timeState;
 RT_SYNC_STATUS_t _rtSyncStatus;
 
 void updateSec(uint32_t sec);
 void printRtcSyncStatus(RT_SYNC_STATUS_t rtsync);
+
+DateTime _dt;
+uint8_t _nowHour;
+uint8_t _prevHour;
 /********Function prototype*************/
 void timerIsr(void);
-void setSecond(uint32_t second);
+// void setSecond(uint32_t second);
 void printDateTime(DateTime *dtPtr);
 void startSysTimeFromRtc();
 void updateTime(uint32_t NtpTime = 0);
@@ -100,63 +87,9 @@ void printDateTime(DateTime *dtPtr)
   Serial.print(dtPtr->toString(buf4));
   Serial.println(F("        |\r\n|------------------------------------|"));
 }
-void startSysTimeFromRtc()
-{
-  uint32_t rtcUnix = getRtcUnix();
-  sec = rtcUnix;             //update processor time
-  timer1.start();             //start processor time
-}
 
 
 
-
-tState_t realTimeSync()
-{
-  switch (timeState)
-  {
-    case WAIT:
-      if (sec - prevSec >= PRINT_TIMEOUT)
-      {
-        prevSec = sec;
-        timeState = MINUTELY;
-      }
-      break;
-    case MINUTELY:
-      // Serial.println(F("Minutely Schedule"));
-      dt = DateTime(sec);
-      printDateTime(&dt);
-      nowHour = dt.hour();
-      //      nowHour = 23;
-      if (nowHour > prevHour)
-      {
-        prevHour = nowHour;
-        timeState = HOURLY;
-      }
-      else
-      {
-        timeState = WAIT;
-      }
-      break;
-    case HOURLY:
-      Serial.println(F("Hourly Schedule"));
-      //execute hourly task
-      if (nowHour == DAILY_SCHEDULE_JOB_TIME)
-      {
-        timeState = DAILY;
-      }
-      else
-      {
-        timeState = WAIT;
-      }
-      break;
-    case DAILY:
-      Serial.println(F("Daily Schedule"));
-      //execute daily task;
-      timeState = WAIT;
-      break;
-  }
-  return timeState;
-}
 
 /****************New Library******************/
 
@@ -206,9 +139,12 @@ void rtBegin(funCb_t getntp)
 {
   _getNtpTime = getntp;
   _second = 0;
+  _prevSecond = 0;
   _tempSec = 0;
   _timeState = WAIT;
   _rtSyncStatus = UNSYNCED;
+  _nowHour = 0;
+  _prevHour = 0;
 	// prevSec = 0;
 	// nowHour = 0;
 	// prevHour = 0;
@@ -265,7 +201,7 @@ bool rtsync()
 {
 	if(getNTP)
 	{
-		uint32_t ntpUnix = getNTP();
+		uint32_t ntpUnix = _getNtpTime();
 		bool ok = rtSync(ntpUnix);
 		return ok;
 	}
@@ -273,4 +209,52 @@ bool rtsync()
 	{
 		return false;
 	}
+}
+
+tState_t rtLoop()
+{
+  switch (_timeState)
+  {
+    case WAIT:
+      if (_second - _prevSecond >= PRINT_TIMEOUT)
+      {
+        _prevSecond = _second;
+        _timeState = MINUTELY;
+      }
+      break;
+    case MINUTELY:
+      // Serial.println(F("Minutely Schedule"));
+      _dt = DateTime(_second);
+      printDateTime(&dt);
+      _nowHour = dt.hour();
+      //      nowHour = 23;
+      if (_nowHour > _prevHour)
+      {
+        _prevHour = _nowHour;
+        _timeState = HOURLY;
+      }
+      else
+      {
+        _timeState = WAIT;
+      }
+      break;
+    case HOURLY:
+      Serial.println(F("Hourly Schedule"));
+      //execute hourly task
+      if (_nowHour == DAILY_SCHEDULE_JOB_TIME)
+      {
+        _timeState = DAILY;
+      }
+      else
+      {
+        _timeState = WAIT;
+      }
+      break;
+    case DAILY:
+      Serial.println(F("Daily Schedule"));
+      //execute daily task;
+      _timeState = WAIT;
+      break;
+  }
+  return _timeState;
 }
