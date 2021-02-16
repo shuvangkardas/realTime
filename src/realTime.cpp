@@ -50,7 +50,7 @@ void timerIsr(void)
 {
   _second++;
   _tempSec++;
-  Serial.println(F("Timer ISR Triggered"));
+  // Serial.println(F("Timer ISR Triggered"));
 }
 
 uint32_t ms()
@@ -129,10 +129,10 @@ void printRtcSyncStatus(RT_SYNC_STATUS_t rtsync)
 //   }
 // }
 
-void rtAttachRTC(timeGetter_t setter, timeSetter_t getter)
+void rtAttachRTC( timeSetter_t getter, timeGetter_t setter)
 {
-  _rtcGetSec = NULL;
-  _rtcUpdateSec = NULL;
+  _rtcGetSec = getter;
+  _rtcUpdateSec = setter;
 }
 
 void rtBegin(timeGetter_t getntp = NULL)
@@ -159,6 +159,7 @@ RT_SYNC_STATUS_t rtSync(uint32_t uTime)
   if(uTime)
   {
      updateSec(uTime);
+      // _rtcUpdateSec(uTime);
      if(_rtcUpdateSec != NULL)
      {
        _rtcUpdateSec(uTime); //this function update rtc time if differs more than 1 sec
@@ -182,6 +183,7 @@ RT_SYNC_STATUS_t rtSync(uint32_t uTime)
         //zero means rtc provides an invalid time
         updateSec(0); //start rttimer from zero
         _rtSyncStatus = UNSYNCED;
+        Serial.println(F("Unsynced and RTC Failed"));
       }
     }
     else
@@ -193,6 +195,10 @@ RT_SYNC_STATUS_t rtSync(uint32_t uTime)
   }
   timer1.start();//start rt timer
   printRtcSyncStatus(_rtSyncStatus);
+
+  _dt = DateTime(second());
+  _nowHour = _dt.hour();
+  _prevHour = _nowHour;
   return _rtSyncStatus;
 }
 
@@ -213,15 +219,15 @@ tState_t rtLoop()
   switch (_timeState)
   {
     case WAIT:
-      if (_second - _prevSecond >= PRINT_TIMEOUT)
+      if (second() - _prevSecond >= PRINT_TIMEOUT)
       {
-        _prevSecond = _second;
+        _prevSecond = second();
         _timeState = MINUTELY;
       }
       break;
     case MINUTELY:
       // Serial.println(F("Minutely Schedule"));
-      _dt = DateTime(_second);
+      _dt = DateTime(second());
       printDateTime(&_dt);
       _nowHour = _dt.hour();
       //      nowHour = 23;

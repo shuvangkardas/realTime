@@ -24,7 +24,7 @@ typedef enum RT_SYNC_STATUS_t
 uint32_t second();
 
 
-
+void rtAttachRTC( timeSetter_t getter, timeGetter_t setter);
 void rtBegin(timeGetter_t getntp = NULL);
 RT_SYNC_STATUS_t rtSync(uint32_t uTime);
 RT_SYNC_STATUS_t rtsync();
