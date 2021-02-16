@@ -11,7 +11,7 @@ timeGetter_t _rtcGetSec = NULL;
 timeSetter_t _rtcUpdateSec = NULL;
 timeGetter_t _getNtpTime = NULL;
 
-void rtAttachRTC(timeFun_t setter, timeFun_t getter);
+void rtAttachRTC(timeSetter_t setter, timeGetter_t getter);
 volatile uint32_t _second;
 uint32_t _prevSecond;
 volatile uint32_t _tempSec;
@@ -30,17 +30,17 @@ void timerIsr(void);
 void printDateTime(DateTime *dtPtr);
 void startSysTimeFromRtc();
 void updateTime(uint32_t NtpTime = 0);
-
-/**********Objects global vars**************/
-RTC_DS1307 rtc;
-volatile uint32_t sec;
-
-uint32_t prevSec;
-uint8_t nowHour;
-uint8_t prevHour;
-
 DateTime dt;
-funCb_t getNTP;
+/**********Objects global vars**************/
+// RTC_DS1307 rtc;
+// volatile uint32_t sec;
+
+// uint32_t prevSec;
+// uint8_t nowHour;
+// uint8_t prevHour;
+
+
+// funCb_t getNTP;
 
 
 
@@ -95,7 +95,7 @@ void printDateTime(DateTime *dtPtr)
 
 void printRtcSyncStatus(RT_SYNC_STATUS_t rtsync)
 {
-  Serial.print(F("<--Timer sync Status : "))
+  Serial.print(F("<--Timer sync Status : "));
   switch (rtsync)
   {
   case NTP_SYNCED:
@@ -111,23 +111,23 @@ void printRtcSyncStatus(RT_SYNC_STATUS_t rtsync)
   Serial.println(F("--->"));
 }
 
-void updateTime(uint32_t NtpTime)
-{
-  if (NtpTime)
-  {
-    Serial.println(F("Updated from NTP"));
-    sec = NtpTime;
-    timer1.start();
-    rtc.adjust(DateTime(sec));
-  }
-  else
-  {
-    Serial.println(F("Updated from RTC"));
-    uint32_t rtcUnix = getRtcUnix();
-    sec = rtcUnix;             //update processor time
-    timer1.start();             //start processor time
-  }
-}
+// void updateTime(uint32_t NtpTime)
+// {
+//   if (NtpTime)
+//   {
+//     Serial.println(F("Updated from NTP"));
+//     sec = NtpTime;
+//     timer1.start();
+//     rtc.adjust(DateTime(sec));
+//   }
+//   else
+//   {
+//     Serial.println(F("Updated from RTC"));
+//     uint32_t rtcUnix = getRtcUnix();
+//     sec = rtcUnix;             //update processor time
+//     timer1.start();             //start processor time
+//   }
+// }
 
 void rtAttachRTC(timeGetter_t setter, timeSetter_t getter)
 {
@@ -135,7 +135,7 @@ void rtAttachRTC(timeGetter_t setter, timeSetter_t getter)
   _rtcUpdateSec = NULL;
 }
 
-void rtBegin(funCb_t getntp)
+void rtBegin(timeGetter_t getntp = NULL)
 {
   _getNtpTime = getntp;
   _second = 0;
