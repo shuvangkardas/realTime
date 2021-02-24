@@ -1,7 +1,11 @@
 #include "realTime.h"
-#include "RTClib.h"
-#include "AVR_Timer1.h"
-
+#if defined(PROD_BUILD)
+  #include "../../RTClib/RTClib.h"
+  #include "../../Timer1/src/AVR_Timer1.h"
+#else
+  #include "RTClib.h"
+  #include "AVR_Timer1.h"
+#endif
 #define PRINT_TIMEOUT 30  //second
 #define UPDATE_CLOCK 3600 //second
 #define DAILY_SCHEDULE_JOB_TIME 23  //11:00PM 
