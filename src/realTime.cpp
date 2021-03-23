@@ -77,13 +77,13 @@ void printDateTime(DateTime *dtPtr)
 }
 
 
-void rtAttachRTC( timeSetter_t getter, timeGetter_t setter)
+void rtAttachRTC( timeGetter_t getter, timeSetter_t setter)
 {
   _rtcGetSec = getter;
   _rtcUpdateSec = setter;
 }
 
-void rtBegin(timeGetter_t getntp = NULL)
+void rtBegin(timeGetter_t getntp)
 {
   _getNtpTime = getntp;
   _second = 0;
