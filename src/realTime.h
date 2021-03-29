@@ -7,6 +7,7 @@
 
 typedef uint32_t (*timeGetter_t)(void);
 typedef void (*timeSetter_t)(uint32_t);
+
 typedef enum tState_t
 {
   WAIT,
@@ -22,12 +23,13 @@ typedef enum RT_SYNC_STATUS_t
 };
 
 
-void rtAttachRTC( timeGetter_t getter, timeSetter_t setter);
+void rtAttachRTC(timeGetter_t getter, timeSetter_t setter);
+void rtAttachFastRTC(timeGetter_t getter, timeSetter_t setter,void (*StartRtc)(void));
 void rtBegin(timeGetter_t getntp = NULL);
 RT_SYNC_STATUS_t rtSync(uint32_t uTime);
 RT_SYNC_STATUS_t rtsync();
-uint32_t second();
-uint32_t ms();
+// uint32_t second();
+// uint32_t ms();
 tState_t rtLoop();
 
 

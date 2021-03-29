@@ -11,20 +11,25 @@
 #define DAILY_SCHEDULE_JOB_TIME 23  //11:00PM 
 
 /********Function prototype*************/
-void timerIsr(void);
-void updateSec(uint32_t sec);
+// void timerIsr(void);
+// void updateSec(uint32_t sec);
 void printDateTime(DateTime *dtPtr);
 
-void rtAttachRTC(timeSetter_t setter, timeGetter_t getter);
+// void rtAttachRTC(timeSetter_t setter, timeGetter_t getter);
 void printRtcSyncStatus(RT_SYNC_STATUS_t rtsync);
 
 /***********Global Vars****************/
 timeGetter_t _rtcGetSec = NULL;
 timeSetter_t _rtcUpdateSec = NULL;
+
 timeGetter_t _getNtpTime = NULL;
 
-volatile uint32_t _second;
-volatile uint32_t _tempSec;
+timeGetter_t second = NULL;
+timeSetter_t updateSec = NULL;
+void (*startFastRtc)(void) = NULL;
+
+// volatile uint32_t _second;
+// volatile uint32_t _tempSec;
 uint32_t _prevSecond;
 uint8_t _nowHour;
 uint8_t _prevHour;
@@ -34,39 +39,7 @@ RT_SYNC_STATUS_t _rtSyncStatus;
 DateTime _dt;
 
 
-void timerIsr(void)
-{
-  _second++;
-  _tempSec++;
-  // Serial.println(F("Timer ISR Triggered"));
-}
 
-uint32_t ms()
-{
-  // 1000*TCNT1/ICR1 + second*1000;
-  uint16_t tcnt1 = TCNT1;
-  // Serial.println(F("------"));
-  // Serial.println(tcnt1);
-  // Serial.println(ICR1);
-  uint32_t temp = (uint32_t)tcnt1*(uint32_t)1000;
-  // Serial.println(temp);
-  temp = temp/(uint32_t)ICR1;
-  // Serial.println(temp);
-
-  temp = _tempSec*(uint32_t)1000 + temp;
-  return temp;
-}
-
-uint32_t second()
-{
-  return _second;
-}
-
-void updateSec(uint32_t sec)
-{
-  //check if input sec is different from existing sec. 
-  _second = sec;
-}
 
 void printDateTime(DateTime *dtPtr)
 {
@@ -83,12 +56,19 @@ void rtAttachRTC( timeGetter_t getter, timeSetter_t setter)
   _rtcUpdateSec = setter;
 }
 
+void rtAttachFastRTC(timeGetter_t getter, timeSetter_t setter,void (*StartRtc)(void))
+{
+  second = getter;
+  updateSec = setter;
+  startFastRtc = StartRtc;
+}
+
 void rtBegin(timeGetter_t getntp)
 {
   _getNtpTime = getntp;
-  _second = 0;
+  // _second = 0;
   _prevSecond = 0;
-  _tempSec = 0;
+  // _tempSec = 0;
   _timeState = WAIT;
   _rtSyncStatus = UNSYNCED;
   _nowHour = 0;
@@ -96,8 +76,8 @@ void rtBegin(timeGetter_t getntp)
 	// prevSec = 0;
 	// nowHour = 0;
 	// prevHour = 0;
-  timer1.initialize(1);
-	timer1.attachIntCompB(timerIsr);
+  // timer1.initialize(1);
+	// timer1.attachIntCompB(timerIsr);
 }
 
 
@@ -124,8 +104,11 @@ RT_SYNC_STATUS_t rtSync(uint32_t uTime)
 	// I have to assume that utime is valid time. 
   if(uTime)
   {
-     updateSec(uTime);
-      // _rtcUpdateSec(uTime);
+     if(updateSec !=NULL)
+     {
+        updateSec(uTime);
+     }
+
      if(_rtcUpdateSec != NULL)
      {
        _rtcUpdateSec(uTime); //this function update rtc time if differs more than 1 sec
@@ -141,13 +124,19 @@ RT_SYNC_STATUS_t rtSync(uint32_t uTime)
       if(rtcSec)
       {
         //if rtc provides a valid time
-        updateSec(rtcSec);
+        if(updateSec !=NULL)
+        {
+          updateSec(rtcSec);
+        }
         _rtSyncStatus = RTC_SYNCED;
       }
       else
       {
         //zero means rtc provides an invalid time
-        updateSec(0); //start rttimer from zero
+        if(updateSec !=NULL)
+        {
+          updateSec(0); //start rttimer from zero
+        }
         _rtSyncStatus = UNSYNCED;
         Serial.println(F("Unsynced and RTC Failed"));
       }
@@ -155,11 +144,18 @@ RT_SYNC_STATUS_t rtSync(uint32_t uTime)
     else
     {
       // if device has no rtc chip
-      updateSec(0);
+      if(updateSec !=NULL)
+      {
+        updateSec(0);
+      }
       _rtSyncStatus = UNSYNCED;
     }
   }
-  timer1.start();//start rt timer
+  // timer1.start();//start rt timer
+  if(startFastRtc != NULL)
+  {
+    startFastRtc();
+  }
   printRtcSyncStatus(_rtSyncStatus);
 
   _dt = DateTime(second());
