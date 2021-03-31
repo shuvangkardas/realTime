@@ -1,9 +1,9 @@
 #ifndef _SYNC_TIME_H
 #define _SYNC_TIME_H
 #include <Arduino.h>
-#include <stdint.h>
-#include <stddef.h>
-#include <stdbool.h>
+// #include <stdint.h>
+// #include <stddef.h>
+// #include <stdbool.h>
 
 typedef uint32_t (*timeGetter_t)(void);
 typedef void (*timeSetter_t)(uint32_t);

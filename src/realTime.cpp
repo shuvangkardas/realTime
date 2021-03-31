@@ -1,10 +1,10 @@
 #include "realTime.h"
 #if defined(PROD_BUILD)
   #include "../../RTClib/RTClib.h"
-  #include "../../Timer1/src/AVR_Timer1.h"
+  // #include "../../Timer1/src/AVR_Timer1.h"
 #else
   #include "RTClib.h"
-  #include "AVR_Timer1.h"
+  // #include "AVR_Timer1.h"
 #endif
 #define PRINT_TIMEOUT 30  //second
 #define UPDATE_CLOCK 3600 //second
@@ -39,16 +39,16 @@ RT_SYNC_STATUS_t _rtSyncStatus;
 DateTime _dt;
 
 
-
-
-void printDateTime(DateTime *dtPtr)
+void rtBegin(timeGetter_t getntp)
 {
-  char buf4[] = "DD/MM/YYYY-hh:mm:ss";
-  Serial.print(F("|------------------------------------|\r\n|         "));
-  Serial.print(dtPtr->toString(buf4));
-  Serial.println(F("        |\r\n|------------------------------------|"));
-}
+  _getNtpTime = getntp;
+  _prevSecond = 0;
 
+  _timeState = WAIT;
+  _rtSyncStatus = UNSYNCED;
+  _nowHour = 0;
+  _prevHour = 0;
+}
 
 void rtAttachRTC( timeGetter_t getter, timeSetter_t setter)
 {
@@ -63,41 +63,8 @@ void rtAttachFastRTC(timeGetter_t getter, timeSetter_t setter,void (*StartRtc)(v
   startFastRtc = StartRtc;
 }
 
-void rtBegin(timeGetter_t getntp)
-{
-  _getNtpTime = getntp;
-  // _second = 0;
-  _prevSecond = 0;
-  // _tempSec = 0;
-  _timeState = WAIT;
-  _rtSyncStatus = UNSYNCED;
-  _nowHour = 0;
-  _prevHour = 0;
-	// prevSec = 0;
-	// nowHour = 0;
-	// prevHour = 0;
-  // timer1.initialize(1);
-	// timer1.attachIntCompB(timerIsr);
-}
 
 
-void printRtcSyncStatus(RT_SYNC_STATUS_t rtsync)
-{
-  Serial.print(F("<--Timer sync Status : "));
-  switch (rtsync)
-  {
-  case NTP_SYNCED:
-    Serial.print(F("NTP_SYNCED"));
-    break;
-  case RTC_SYNCED:
-    Serial.print(F("RTC_SYNCED"));
-    break;
-  case UNSYNCED:
-     Serial.print(F("UNSYNCED"));
-  break;
-  }
-  Serial.println(F("--->"));
-}
 
 RT_SYNC_STATUS_t rtSync(uint32_t uTime)
 {
@@ -117,7 +84,7 @@ RT_SYNC_STATUS_t rtSync(uint32_t uTime)
   }
   else
   {
-    //when utime is zero, means no time found from rtc
+    //when utime is zero, means no time found from ntp
     if(_rtcGetSec != NULL)
     {
       uint32_t rtcSec = _rtcGetSec();
@@ -222,4 +189,31 @@ tState_t rtLoop()
       break;
   }
   return _timeState;
+}
+
+void printDateTime(DateTime *dtPtr)
+{
+  char buf4[] = "DD/MM/YYYY-hh:mm:ss";
+  Serial.print(F("|------------------------------------|\r\n|         "));
+  Serial.print(dtPtr->toString(buf4));
+  Serial.println(F("        |\r\n|------------------------------------|"));
+}
+
+
+void printRtcSyncStatus(RT_SYNC_STATUS_t rtsync)
+{
+  Serial.print(F("<--Timer sync Status : "));
+  switch (rtsync)
+  {
+  case NTP_SYNCED:
+    Serial.print(F("NTP_SYNCED"));
+    break;
+  case RTC_SYNCED:
+    Serial.print(F("RTC_SYNCED"));
+    break;
+  case UNSYNCED:
+     Serial.print(F("UNSYNCED"));
+  break;
+  }
+  Serial.println(F("--->"));
 }
