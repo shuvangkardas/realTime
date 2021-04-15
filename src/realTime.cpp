@@ -39,6 +39,7 @@ RT_SYNC_STATUS_t _rtSyncStatus;
 DateTime _dt;
 
 
+
 void rtBegin(timeGetter_t getntp)
 {
   _getNtpTime = getntp;
@@ -156,10 +157,18 @@ tState_t rtLoop()
       break;
     case MINUTELY:
       // Serial.println(F("Minutely Schedule"));
+      //sync time if not ntp sync
+      if(_rtSyncStatus != NTP_SYNCED)
+      {
+        Serial.println(F("Synching ntp time again---->>>>"));
+        rtsync();
+      }
+
       _dt = DateTime(second());
       printDateTime(&_dt);
       _nowHour = _dt.hour();
       //      nowHour = 23;
+
       if (_nowHour > _prevHour)
       {
         _prevHour = _nowHour;
