@@ -135,13 +135,17 @@ RT_SYNC_STATUS_t rtSync(uint32_t uTime)
 
 RT_SYNC_STATUS_t rtsync()
 {
-  RT_SYNC_STATUS_t syncStatus = UNSYNCED;
+  // RT_SYNC_STATUS_t syncStatus = UNSYNCED;
 	if(_getNtpTime)
 	{
 		uint32_t ntpUnix = _getNtpTime();
-		syncStatus = rtSync(ntpUnix);
+    if(ntpUnix)
+    {
+      rtSync(ntpUnix);
+    }
 	}
-  return syncStatus;
+  return _rtSyncStatus;
+  // return syncStatus;
 }
 
 tState_t rtLoop()
