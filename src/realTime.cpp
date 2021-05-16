@@ -215,18 +215,17 @@ void printDateTime(DateTime *dtPtr)
 
 void printRtcSyncStatus(RT_SYNC_STATUS_t rtsync)
 {
-  Serial.print(F("<--Timer sync Status : "));
+  Serial.print(F("RT_TIME->"));
   switch (rtsync)
   {
   case NTP_SYNCED:
-    Serial.print(F("NTP_SYNCED"));
+    Serial.println(F("NTP_SYNCED"));
     break;
   case RTC_SYNCED:
-    Serial.print(F("RTC_SYNCED"));
+    Serial.println(F("RTC_SYNCED"));
     break;
   case UNSYNCED:
-     Serial.print(F("UNSYNCED"));
+     Serial.println(F("UNSYNCED"));
   break;
   }
-  Serial.println(F("--->"));
 }
