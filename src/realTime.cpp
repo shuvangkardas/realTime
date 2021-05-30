@@ -1,3 +1,9 @@
+/*
+Author  :  Shuvangkar Chandra Das
+Description:  This library mainly handles real time capability of rtc timer. 
+So the library takes input of two timer functioins. one is fast timer and other is slow timer
+and keep updated both of the timer. 
+*/
 #include "realTime.h"
 #if defined(PROD_BUILD)
   #include "../../RTClib/RTClib.h"
@@ -39,7 +45,7 @@ RT_SYNC_STATUS_t _rtSyncStatus;
 DateTime _dt;
 
 
-
+//start real time functionality.
 void rtBegin(timeGetter_t getntp)
 {
   _getNtpTime = getntp;
@@ -51,12 +57,14 @@ void rtBegin(timeGetter_t getntp)
   _prevHour = 0;
 }
 
+//attach slow rtc call back functions
 void rtAttachRTC( timeGetter_t getter, timeSetter_t setter)
 {
   _rtcGetSec = getter;
   _rtcUpdateSec = setter;
 }
 
+//attach fast rtc callback function 
 void rtAttachFastRTC(timeGetter_t getter, timeSetter_t setter,void (*StartRtc)(void))
 {
   second = getter;
@@ -64,9 +72,7 @@ void rtAttachFastRTC(timeGetter_t getter, timeSetter_t setter,void (*StartRtc)(v
   startFastRtc = StartRtc;
 }
 
-
-
-
+//sync rtc timer and return whoch timer is updated. 
 RT_SYNC_STATUS_t rtSync(uint32_t uTime)
 {
 	// I have to assume that utime is valid time. 
@@ -132,7 +138,7 @@ RT_SYNC_STATUS_t rtSync(uint32_t uTime)
   return _rtSyncStatus;
 }
 
-
+//rtc timer sync in callback fuction 
 RT_SYNC_STATUS_t rtsync()
 {
   // RT_SYNC_STATUS_t syncStatus = UNSYNCED;
@@ -148,6 +154,8 @@ RT_SYNC_STATUS_t rtsync()
   // return syncStatus;
 }
 
+//this function runs in main loop and keetp track of time and perform 
+//routine task 
 tState_t rtLoop()
 {
   switch (_timeState)
@@ -204,6 +212,7 @@ tState_t rtLoop()
   return _timeState;
 }
 
+//print date time in humand readble format
 void printDateTime(DateTime *dtPtr)
 {
   char buf4[] = "DD/MM/YYYY-hh:mm:ss";
@@ -212,7 +221,7 @@ void printDateTime(DateTime *dtPtr)
   Serial.println(F("        |\r\n|------------------------------------|"));
 }
 
-
+//print ptc sync status for debugging 
 void printRtcSyncStatus(RT_SYNC_STATUS_t rtsync)
 {
   Serial.print(F("RT_TIME->"));
